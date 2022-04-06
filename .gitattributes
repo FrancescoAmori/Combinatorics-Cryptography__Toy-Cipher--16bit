@@ -1,1 +1,2 @@
 *. linguist-language=MAGMA
+*.MAGMA linguist-detectable=true
