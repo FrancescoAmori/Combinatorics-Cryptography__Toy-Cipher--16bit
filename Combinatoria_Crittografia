@@ -1,0 +1,303 @@
+////////////////////////////////////////////////////////////////////////////////
+//CRITTOGRAFIA 2//
+
+// t:=Cputime();                     // start cpu time
+n:=73786976659910426999;             // asseganzione valori
+d:=73786976638435590480;
+a:=Modexp(3,d,n);                    // calcolo specificio di a
+a;
+// Cputime(t);                       // tempo di escuzione impiegato
+
+//CRITTOGRAFIA 3//
+////////////////////////////////////////////////////////////////////////////////
+// Parametri per testing - SONO A FINE CODICE PRIMA DELLA FUNCTION
+// Key:=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];        // key
+// Key:=[1,1,0,0,0,0,1,0,1,0,1,0,1,0,1,0];
+// Msg:=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];        // messaggio
+// Msg:=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+// Msg:=[1,1,1,1,1,0,0,0,1,1,1,0,0,1,1,0];
+
+// NOTA: nel codice si sono alcuni esempi commentati, sono stati utilizzati in
+//       fase di programmazione per vedere se erano corrette le function
+
+V:=VectorSpace(GF(2),16);               // spazio del messaggio
+G:=GF(2);                               // campo in F2
+                                        // inizializzazione polinomio
+P<x>:=PolynomialRing(G);                // definisco P<x>
+g:=P![1,1,1,1,1];                       // polinomio preso dall'es 1 = t^4+t^3+t^2+t+1
+I:= ideal<P|g>;
+F<X>:=quo<P|I>;
+IsField(F);                              // verifica se è un campo o no
+
+Pol:={a: a in F};                        // INSIEME DI TUTTI I POLNOMI NEL CAMPO F2[T]\<G>
+//Pol;                                   // tutti i polinomi nel Campo F (quindi le operazioni se si eseguono in F rispettano le regole del campo)
+J:={P![a,b,c,d] : a,b,c,d in [0..1]};    // tutte le permutazioni viste come Polinomi -> infatti sono gli stessi che ci sono in Pol
+//J;                                     // stessi polinomi ma non nel campo, inaftti se operazioni vanno fatte "mod g" per far si che siano cooerenti con le regole del campo
+W:=Sym(J);                               // verifica card.
+                                         // Eseguendo Pol e J vedo se effettivamente ho corrispondenza, potevo anche non farlo ma avendolo usato in fase di sviluppo non l'ho rimosso
+// v:=P![1,1,0,1];
+function find_inverse (v)                // funzione per trovare q
+  for a in J do
+    if v eq P![0,0,0,0] then                // come sopra ma fatto per tutti e 4 i blocchi del msg
+      inv_v:=P!0;
+    elif v eq P![1,0,1,1] then              // condizione imposta su gamma' nel caso in cui il vettore sia 1101 - si ripete nei controlli successivi
+      inv_v:= P![0,0,1,1];
+    elif (v*a) mod g eq 1 then             // verifico la condiozne
+      inv_v:=a;                          // assegno a come il mio polinomio q
+    end if;
+  end for;
+  return inv_v;                           // ritorno inv_v
+end function;
+// inv_v:=find_inverse (v);
+
+function dammi_coefficineti_q (inv_v)     // funzione che mi da i coefficienti di q
+  h:=[];                                  // lista ausiliaria
+  Append(～h,Coefficients(inv_v));        // aggiungi i valori nel primo elemanto della lista
+  j:=ElementToSequence(h);                // comverti in sequenza di elementi per accedere
+  while #j[1] lt 4 do                     // if per aggiunta valori 0 se i cofficineti hanno dim < 4
+    Append(～j[1],0);                     // aggiungo 0 per completare i coefficienti
+  end while;                              // fine ciclo
+  b:=Eltseq(j[1]);                        // converto in una sequenza
+
+  e:=[];                                  // uso array di appoggio
+  Append(～e,b[4]);                       // aggiungo all'array
+  Append(～e,b[3]);
+  Append(～e,b[2]);
+  Append(～e,b[1]);
+return e;                                 // coefficienti di q (polnomio inverso) - ordine inverso
+end function;
+// c_inv_q:=dammi_coefficineti_q(inv_v);
+
+function Msg_schedule (Msg)
+  M1:=Vector(Msg[1..4]);                  // divisione 4 blocchi
+  M2:=Vector(Msg[5..8]);
+  M3:=Vector(Msg[9..12]);
+  M4:=Vector(Msg[13..16]);
+
+  o1:=Eltseq(M1);                         // divisione 4 blocchi -> come sequenza
+  o2:=Eltseq(M2);
+  o3:=Eltseq(M3);
+  o4:=Eltseq(M4);
+
+    s1:=[];                              // uso array di appoggio
+    Append(～s1,o1[4]);                  // aggiungo all'array
+    Append(～s1,o1[3]);
+    Append(～s1,o1[2]);
+    Append(～s1,o1[1]);
+
+     c1:=P!s1;
+     inv_t1:=find_inverse(c1);
+     d_inv_v1:=dammi_coefficineti_q(inv_t1);
+
+    s2:=[];                              // uso array di appoggio
+    Append(～s2,o2[4]);                  // aggiungo all'array
+    Append(～s2,o2[3]);
+    Append(～s2,o2[2]);
+    Append(～s2,o2[1]);
+
+    c2:=P!s2;
+    inv_t2:=find_inverse(c2);
+    d_inv_v2:=dammi_coefficineti_q(inv_t2);
+
+
+    s3:=[];                              // uso array di appoggio
+    Append(～s3,o3[4]);                  // aggiungo all'array
+    Append(～s3,o3[3]);
+    Append(～s3,o3[2]);
+    Append(～s3,o3[1]);
+
+    c3:=P!s3;
+    inv_t3:=find_inverse(c3);
+    d_inv_v3:=dammi_coefficineti_q(inv_t3);
+
+    s4:=[];                              // uso array di appoggio
+    Append(～s4,o4[4]);                  // aggiungo all'array
+    Append(～s4,o4[3]);
+    Append(～s4,o4[2]);
+    Append(～s4,o4[1]);
+
+    c4:=P!s4;
+    inv_t4:=find_inverse(c4);
+    d_inv_v4:=dammi_coefficineti_q(inv_t4);
+
+
+  Msg:=[Eltseq(d_inv_v1) cat Eltseq(d_inv_v2) cat Eltseq(d_inv_v3) cat Eltseq(d_inv_v4)];   // concateno
+  n:=Vector(Msg[1]);                                                               // conversioni comode
+  Msg:=Eltseq(n);
+
+  // DIFFUSION LAYER
+  Msg_Diffusion:=[];                 // array appoggio
+  Insert(～Msg_Diffusion,1,Msg[1]);  // inserisco secondo il critrio di Lampda
+  Insert(～Msg_Diffusion,2,Msg[5]);
+  Insert(～Msg_Diffusion,3,Msg[9]);
+  Insert(～Msg_Diffusion,4,Msg[13]);
+  Insert(～Msg_Diffusion,5,Msg[2]);
+  Insert(～Msg_Diffusion,6,Msg[6]);
+  Insert(～Msg_Diffusion,7,Msg[10]);
+  Insert(～Msg_Diffusion,8,Msg[14]);
+  Insert(～Msg_Diffusion,9,Msg[3]);
+  Insert(～Msg_Diffusion,10,Msg[7]);
+  Insert(～Msg_Diffusion,11,Msg[11]);
+  Insert(～Msg_Diffusion,12,Msg[15]);
+  Insert(～Msg_Diffusion,13,Msg[4]);
+  Insert(～Msg_Diffusion,14,Msg[8]);
+  Insert(～Msg_Diffusion,15,Msg[12]);
+  Insert(～Msg_Diffusion,16,Msg[16]);
+  // Msg_Diffusion;
+
+  return Msg_Diffusion;               // ritorno la struttura dati
+end function;                         // fine function
+
+// inv_v;
+// c_inv_q;
+
+Key_Schedule:=[];                     // array appoggio
+function Key_Schedule_X (Key, Msg, round)
+  // Key;
+  for a in [1..round] do                 // ciclo for 12 iterazioni
+    if a eq 1 then                       // prima iterazione valore di key base
+      Key:=Key;
+      Msg_Output:=Msg_schedule(Msg);
+      // Key_1:=Msg_Output;
+      Msg_Output_ii:=Vector(Msg_Output)+Vector(Key);
+      Msg_Output:=Eltseq(Msg_Output_ii);
+
+        // print "Input 1a iterazione + Key 1a iterazione";
+        // Msg;
+        // Key_1;                        // <- output al primo giro quando msg è 0
+
+    else
+    // print "Input per round successivi + key iterata";
+      // Key:=Msg_z;
+    // Key;
+
+    V1:=Vector(Key[1..4]);            // divisione 4 blocchi
+    V2:=Vector(Key[5..8]);
+    V3:=Vector(Key[9..12]);
+    V4:=Vector(Key[13..16]);
+
+    u1:=Eltseq(V1);                   // divisione 4 blocchi -> come sequenza
+    u2:=Eltseq(V2);
+    u3:=Eltseq(V3);
+    u4:=Eltseq(V4);
+
+    // CONFUSION LAYER
+        // primo blocco
+        e1:=[];                              // uso array di appoggio - LETTURA INVERSA
+        Append(～e1,u1[4]);                  // aggiungo all'array
+        Append(～e1,u1[3]);
+        Append(～e1,u1[2]);
+        Append(～e1,u1[1]);
+
+        v1:=P!e1;       // v1:=P!u1           // richiamo function per ottenere i coefficienti
+        inv_v1:=find_inverse(v1);
+        c_inv_v1:=dammi_coefficineti_q(inv_v1);
+
+        // terzo blcco
+        e3:=[];                              // uso array di appoggio
+        Append(～e3,u3[4]);                  // aggiungo all'array
+        Append(～e3,u3[3]);
+        Append(～e3,u3[2]);
+        Append(～e3,u3[1]);
+
+        v3:=P!e3;                        // richiamo function per ottenere i coefficienti
+        inv_v3:=find_inverse(v3);
+        c_inv_v3:=dammi_coefficineti_q(inv_v3);
+
+    Key:=[Eltseq(c_inv_v1) cat u2 cat Eltseq(c_inv_v3) cat u4]; // concateno per avere la sequenza
+    n:=Vector(Key[1]);                // converto perche fa comodo
+    Key:=Eltseq(n);                   // riconverto perche tanto non lo faccio io a mano e mi serve
+
+    // ROT -FUNZIONE DI SHIFT VERSO DX
+    Key_Schedule:=[];                  // array appoggio
+    Insert(～Key_Schedule,1,Key[10]);  // aggiungo valori all'array con uno shift di 7
+    Insert(～Key_Schedule,2,Key[11]);  // 7 lo ottengo da 8-a dove "a"=1 e deriva dall'esercizio 2
+    Insert(～Key_Schedule,3,Key[12]);
+    Insert(～Key_Schedule,4,Key[13]);
+    Insert(～Key_Schedule,5,Key[14]);
+    Insert(～Key_Schedule,6,Key[15]);
+    Insert(～Key_Schedule,7,Key[16]);
+    Insert(～Key_Schedule,8,Key[1]);
+    Insert(～Key_Schedule,9,Key[2]);
+    Insert(～Key_Schedule,10,Key[3]);
+    Insert(～Key_Schedule,11,Key[4]);
+    Insert(～Key_Schedule,12,Key[5]);
+    Insert(～Key_Schedule,13,Key[6]);
+    Insert(～Key_Schedule,14,Key[7]);
+    Insert(～Key_Schedule,15,Key[8]);
+    Insert(～Key_Schedule,16,Key[9]);
+    // Key_Schedule;                       // arrray completo
+    Key:=Key_Schedule;                     // sovrappongo nome perche mi serve per il richiamo
+
+    Msg_Output:=Msg_schedule(Msg_Output);         // applico il msg schedule all'output del giro precedente e otengo il mio input
+    Msg_Output_i:=Vector(Msg_Output)+Vector(Key);
+    Msg_Output:=Eltseq(Msg_Output_i);
+    end if;
+  end for;
+  return Msg_Output;                            // ritorno Key
+end function;                                   // fine funzione
+
+// una volta eseguite le function copio e incollo in Magma le rige sottostanti
+function E_K (Key, Msg, round)
+  Mex_Cifrato_12:=Key_Schedule_X (Key, Msg, round);
+  return Mex_Cifrato_12;
+end function;
+
+////////////////////////////////////////////////////////////////////////////////
+// Key:=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];        // key
+Key:=[1,1,0,0,0,0,1,0,1,0,1,0,1,0,1,0];
+// Msg:=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];     // messaggio
+// Msg:=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+Msg:=[1,1,1,1,1,0,0,0,1,1,1,0,0,1,1,0];
+
+Msg;
+Key;
+
+t:=Cputime();
+E_k := E_K(Key, Msg, 12);
+E_k;
+Cputime(t);
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+enc:=[0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0];
+cle:=[1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1];
+// key_giusta:=[1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1];
+K:=VectorSpace(GF(2),16);
+procedure test()
+  for k in K do
+      if E_K(Parent([42])!Eltseq(k),cle,12) eq enc then
+      k;
+      end if;
+    end for;
+end procedure;
+time test();
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////
+// Quesito 4.2 il Toy 16 in questione e' perfetto? NO                           //
+// Un Cifrario e' detto perfetto, o assolutamente sicuro, se dopo               //
+// aver intercettatto un certo testo cifrato c, l'incertezza a posteriori       //
+// sul testo in chiaro m e' uguale all'incertezza che si aveva a priori,        //
+// cioe' prima dell'intercettazione.                                            //
+// Uso il TEOREMA di Shannon                                                    //
+// Condizione necessaria e sufficiente per la segretezza perfetta e'            //
+// p(c|m) = p(c) per ogni m e c                                                 //
+// vuol dire che:                                                               //
+// - p(c|m) deve essere indipendente da m                                       //
+// - il numero di chiavi deve essere almeno pari al numero di messaggi, quindi  //
+// TEOREMA (sulla cardinlaita')                                                 //
+// un Cifrario con |M| = |K| = |C| e' PERFETTO se e solo se c'e'                //
+// esattamente una chiave che trasforma ciascun messaggio m in                  //
+// ciascun crittogramma c e se tutte le chiavi k sono equiprobabili             //
+// inoltre, affiche un cifrario a blocchi sia perfetto, e' necessario un        //
+// generatore di chiavi uniche e casuali che mi generi k                        //
+// cosi da non poter avere relazioni che mi permattano a partire da un testo    //
+// cifrato di risalire al messaggio originale                                   //
+//////////////////////////////////////////////////////////////////////////////////
